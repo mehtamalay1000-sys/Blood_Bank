@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Blood Bank User Portal - Request blood and join donation camps">
+    <title>User Portal — Blood Bank Management System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">🩸</div>
+                <h2>Blood Bank <span>User Portal</span></h2>
+                <button class="theme-toggle" title="Toggle dark/light mode" aria-label="Toggle theme" style="margin-left:auto;">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Menu</div>
+                <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+                    <span class="nav-icon">📊</span> Dashboard
+                </button>
+                <button class="nav-item" data-page="blood-availability" onclick="navigateTo('blood-availability')">
+                    <span class="nav-icon">🩸</span> Blood Availability
+                </button>
+                <button class="nav-item" data-page="my-requests" onclick="navigateTo('my-requests')">
+                    <span class="nav-icon">📋</span> My Requests
+                    <span class="nav-badge" id="pendingBadge" style="display:none;">0</span>
+                </button>
+
+                <div class="sidebar-section-title">Camps</div>
+                <button class="nav-item" data-page="camps" onclick="navigateTo('camps')">
+                    <span class="nav-icon">🏕️</span> Donation Camps
+                </button>
+                <button class="nav-item" data-page="my-camps" onclick="navigateTo('my-camps')">
+                    <span class="nav-icon">✅</span> My Registrations
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">User</div>
+                        <div class="role" id="userRole">user</div>
+                    </div>
+                </div>
+                <button class="nav-item mt-1" onclick="logout()" style="color: var(--danger);">
+                    <span class="nav-icon">🚪</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="toastContainer" class="toast-container"></div>
+
+            <!-- ═══ DASHBOARD ═══ -->
+            <div id="page-dashboard" class="page-section active">
+                <div class="page-header">
+                    <div>
+                        <h1>Welcome back! 👋</h1>
+                        <p>Here's your blood bank activity overview.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="navigateTo('blood-availability')">
+                            🩸 Request Blood
+                        </button>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div class="stats-grid">
+                        <div class="stat-card primary">
+                            <div class="stat-icon">📋</div>
+                            <div class="stat-value" id="statMyRequests">0</div>
+                            <div class="stat-label">Total Requests</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-icon">⏳</div>
+                            <div class="stat-value" id="statPending">0</div>
+                            <div class="stat-label">Pending Requests</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-value" id="statFulfilled">0</div>
+                            <div class="stat-label">Fulfilled Requests</div>
+                        </div>
+                        <div class="stat-card info">
+                            <div class="stat-icon">🏕️</div>
+                            <div class="stat-value" id="statMyCamps">0</div>
+                            <div class="stat-label">Camps Joined</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <!-- Blood Availability Summary -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🩸 Blood Availability</h3>
+                                <button class="btn btn-outline btn-sm" onclick="navigateTo('blood-availability')">View All</button>
+                            </div>
+                            <div class="card-body">
+                                <div class="inventory-grid" id="dashInventoryGrid">
+                                    <div class="loading"><div class="spinner"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Camps -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🏕️ Upcoming Camps</h3>
+                                <button class="btn btn-outline btn-sm" onclick="navigateTo('camps')">View All</button>
+                            </div>
+                            <div class="card-body" id="dashCampsList">
+                                <div class="loading"><div class="spinner"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ BLOOD AVAILABILITY ═══ -->
+            <div id="page-blood-availability" class="page-section">
+                <div class="page-header">
+                    <div>
+                        <h1>Blood Availability</h1>
+                        <p>View available blood units and request what you need.</p>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div class="inventory-grid" id="bloodGrid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ MY REQUESTS ═══ -->
+            <div id="page-my-requests" class="page-section">
+                <div class="page-header">
+                    <div>
+                        <h1>My Blood Requests</h1>
+                        <p>Track the status of your blood requests.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal('requestBloodModal')">
+                        + New Request
+                    </button>
+                </div>
+                <div class="page-body">
+                    <div class="card">
+                        <div class="card-body no-padding">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Patient</th>
+                                            <th>Hospital</th>
+                                            <th>Blood Group</th>
+                                            <th>Units</th>
+                                            <th>Urgency</th>
+                                            <th>Status</th>
+                                            <th>Requested</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="myRequestsTable">
+                                        <tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Loading...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ DONATION CAMPS ═══ -->
+            <div id="page-camps" class="page-section">
+                <div class="page-header">
+                    <div>
+                        <h1>Donation Camps</h1>
+                        <p>Find and join upcoming blood donation camps near you.</p>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div id="campsGrid" class="camps-grid">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ MY CAMPS ═══ -->
+            <div id="page-my-camps" class="page-section">
+                <div class="page-header">
+                    <div>
+                        <h1>My Camp Registrations</h1>
+                        <p>Camps you've registered to attend.</p>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div id="myCampsGrid" class="camps-grid">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══ REQUEST BLOOD MODAL ═══ -->
+    <div class="modal-overlay" id="requestBloodModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🩸 Request Blood</h3>
+                <button class="modal-close" onclick="closeModal('requestBloodModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="requestBloodForm" onsubmit="submitBloodRequest(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reqPatient">Patient Name *</label>
+                            <input type="text" id="reqPatient" class="form-control" placeholder="Full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reqHospital">Hospital Name *</label>
+                            <input type="text" id="reqHospital" class="form-control" placeholder="Hospital name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reqBloodGroup">Blood Group *</label>
+                            <select id="reqBloodGroup" class="form-control form-control-select" required>
+                                <option value="">Select blood group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reqUnits">Units Needed *</label>
+                            <input type="number" id="reqUnits" class="form-control" min="1" max="10" value="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reqUrgency">Urgency</label>
+                            <select id="reqUrgency" class="form-control form-control-select">
+                                <option value="normal">Normal</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reqPhone">Contact Phone</label>
+                            <input type="tel" id="reqPhone" class="form-control" placeholder="Phone number">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reqReason">Reason / Notes</label>
+                        <textarea id="reqReason" class="form-control" placeholder="Brief reason for the request"></textarea>
+                    </div>
+                    <div class="modal-footer" style="padding: 0; border: none; margin-top: 8px;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('requestBloodModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="reqSubmitBtn">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/theme.js"></script>
+    <script src="/js/user-app.js"></script>
+</body>
+</html>

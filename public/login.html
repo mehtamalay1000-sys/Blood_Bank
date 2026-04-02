@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Blood Bank Management System - Secure login portal for blood bank staff and administrators">
+    <title>Login — Blood Bank Management System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle login-theme-toggle" title="Toggle dark/light mode" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+    </button>
+
+    <div class="login-page">
+        <div class="login-container">
+            <!-- Logo -->
+            <div class="login-logo">
+                <div class="logo-icon">🩸</div>
+                <h1>Blood Bank</h1>
+                <p>Management System</p>
+            </div>
+
+            <!-- Login Card -->
+            <div class="login-card">
+                <!-- Tabs -->
+                <div class="login-tabs">
+                    <button class="login-tab active" id="loginTabBtn" onclick="switchTab('login')">Sign In</button>
+                    <button class="login-tab" id="registerTabBtn" onclick="switchTab('register')">Create Account</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" class="form-control" placeholder="Enter your username" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+                    <div id="loginError" class="text-danger mb-2" style="font-size:13px; display:none;"></div>
+                    <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+                        Sign In
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="registerForm" style="display:none;" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="regFullName">Full Name</label>
+                        <input type="text" id="regFullName" class="form-control" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" class="form-control" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="regUsername">Username</label>
+                        <input type="text" id="regUsername" class="form-control" placeholder="Choose a username" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" class="form-control" placeholder="Create a password" required autocomplete="new-password" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="regRole">Role</label>
+                        <select id="regRole" class="form-control form-control-select">
+                            <option value="user" selected>User</option>
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div id="registerError" class="text-danger mb-2" style="font-size:13px; display:none;"></div>
+                    <div id="registerSuccess" class="text-success mb-2" style="font-size:13px; display:none;"></div>
+                    <button type="submit" class="btn btn-primary btn-full" id="registerBtn">
+                        Create Account
+                    </button>
+                </form>
+            </div>
+
+            <p style="text-align:center; margin-top:20px; font-size:13px; color:#9e9e9e;">
+                Default login: <strong style="color:#616161;">admin</strong> / <strong style="color:#616161;">admin123</strong>
+            </p>
+        </div>
+    </div>
+
+    <script src="/js/theme.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+</html>

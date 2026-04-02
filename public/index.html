@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Blood Bank Management System - Manage donors, blood inventory, requests and donation camps">
+    <title>Blood Bank Management System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- ═══ Sidebar ═══ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">🩸</div>
+                <h2>Blood Bank<span>Management System</span></h2>
+                <button class="theme-toggle" title="Toggle dark/light mode" aria-label="Toggle theme" style="margin-left:auto;">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Main</div>
+                <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+                    <span class="nav-icon">📊</span> Dashboard
+                </button>
+                <button class="nav-item" data-page="donors" onclick="navigateTo('donors')">
+                    <span class="nav-icon">👤</span> Donors
+                </button>
+                <button class="nav-item" data-page="inventory" onclick="navigateTo('inventory')">
+                    <span class="nav-icon">🩸</span> Blood Inventory
+                </button>
+                <button class="nav-item" data-page="requests" onclick="navigateTo('requests')">
+                    <span class="nav-icon">📋</span> Blood Requests
+                    <span class="nav-badge" id="pendingBadge" style="display:none;">0</span>
+                </button>
+
+                <div class="sidebar-section-title">Organization</div>
+                <button class="nav-item" data-page="camps" onclick="navigateTo('camps')">
+                    <span class="nav-icon">🏕️</span> Blood Camps
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">Admin</div>
+                        <div class="role" id="userRole">admin</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-full mt-1" onclick="logout()" id="logoutBtn" style="margin-top:12px;">
+                    🚪 Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- ═══ Main Content ═══ -->
+        <main class="main-content">
+
+            <!-- ──── Dashboard Page ──── -->
+            <section class="page-section active" id="page-dashboard">
+                <div class="page-header">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p>Welcome back! Here's an overview of your blood bank.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary btn-sm" onclick="navigateTo('donors'); openAddDonorModal();">
+                            ➕ Add Donor
+                        </button>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <!-- Stats -->
+                    <div class="stats-grid" id="dashboardStats">
+                        <div class="stat-card primary">
+                            <div class="stat-icon">👤</div>
+                            <div class="stat-value" id="statDonors">-</div>
+                            <div class="stat-label">Active Donors</div>
+                        </div>
+                        <div class="stat-card danger">
+                            <div class="stat-icon">🩸</div>
+                            <div class="stat-value" id="statUnits">-</div>
+                            <div class="stat-label">Blood Units Available</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-icon">📋</div>
+                            <div class="stat-value" id="statPending">-</div>
+                            <div class="stat-label">Pending Requests</div>
+                        </div>
+                        <div class="stat-card info">
+                            <div class="stat-icon">🏕️</div>
+                            <div class="stat-value" id="statCamps">-</div>
+                            <div class="stat-label">Upcoming Camps</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-icon">💉</div>
+                            <div class="stat-value" id="statMonthly">-</div>
+                            <div class="stat-label">Donations This Month</div>
+                        </div>
+                        <div class="stat-card danger">
+                            <div class="stat-icon">🚨</div>
+                            <div class="stat-value" id="statCritical">-</div>
+                            <div class="stat-label">Critical Requests</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts & Tables -->
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🩸 Blood Availability</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <div class="bar-chart" id="inventoryChart"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📋 Recent Requests</h3>
+                                <button class="btn btn-sm btn-outline" onclick="navigateTo('requests')">View All</button>
+                            </div>
+                            <div class="card-body no-padding">
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Patient</th>
+                                                <th>Blood</th>
+                                                <th>Urgency</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recentRequestsTable">
+                                            <tr><td colspan="4" class="text-center text-muted" style="padding:30px;">Loading...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>💉 Recent Donations</h3>
+                            <button class="btn btn-sm btn-outline" onclick="navigateTo('inventory')">View All</button>
+                        </div>
+                        <div class="card-body no-padding">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Donor</th>
+                                            <th>Blood Group</th>
+                                            <th>Date</th>
+                                            <th>Units</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentDonationsTable">
+                                        <tr><td colspan="5" class="text-center text-muted" style="padding:30px;">Loading...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ──── Donors Page ──── -->
+            <section class="page-section" id="page-donors">
+                <div class="page-header">
+                    <div>
+                        <h1>Donor Management</h1>
+                        <p>Manage blood donors and their records</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary btn-sm" onclick="openAddDonorModal()" id="addDonorBtn">
+                            ➕ Add Donor
+                        </button>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="donorSearch" placeholder="Search donors by name, email, phone, or city..." oninput="searchDonors()">
+                        </div>
+                        <select class="filter-select" id="donorBloodFilter" onchange="filterDonors()">
+                            <option value="">All Blood Groups</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                        <select class="filter-select" id="donorStatusFilter" onchange="filterDonors()">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body no-padding">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Blood Group</th>
+                                            <th>Phone</th>
+                                            <th>City</th>
+                                            <th>Donations</th>
+                                            <th>Last Donated</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="donorsTableBody">
+                                        <tr><td colspan="8" class="text-center text-muted" style="padding:40px;">Loading donors...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ──── Inventory Page ──── -->
+            <section class="page-section" id="page-inventory">
+                <div class="page-header">
+                    <div>
+                        <h1>Blood Inventory</h1>
+                        <p>Monitor blood stock and manage donations</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary btn-sm" onclick="openRecordDonationModal()" id="recordDonationBtn">
+                            ➕ Record Donation
+                        </button>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <!-- Inventory Grid -->
+                    <div class="inventory-grid mb-3" id="inventoryGrid">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Donations Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>💉 Donation Records</h3>
+                            <div class="d-flex gap-1">
+                                <select class="filter-select" id="donationStatusFilter" onchange="filterDonations()">
+                                    <option value="">All Status</option>
+                                    <option value="collected">Collected</option>
+                                    <option value="tested">Tested</option>
+                                    <option value="stored">Stored</option>
+                                    <option value="used">Used</option>
+                                    <option value="expired">Expired</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body no-padding">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Donor</th>
+                                            <th>Blood Group</th>
+                                            <th>Date</th>
+                                            <th>Units</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="donationsTableBody">
+                                        <tr><td colspan="6" class="text-center text-muted" style="padding:40px;">Loading...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ──── Requests Page ──── -->
+            <section class="page-section" id="page-requests">
+                <div class="page-header">
+                    <div>
+                        <h1>Blood Requests</h1>
+                        <p>Manage blood requests from hospitals</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary btn-sm" onclick="openAddRequestModal()" id="addRequestBtn">
+                            ➕ New Request
+                        </button>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div class="toolbar">
+                        <select class="filter-select" id="requestStatusFilter" onchange="filterRequests()">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="fulfilled">Fulfilled</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                        <select class="filter-select" id="requestUrgencyFilter" onchange="filterRequests()">
+                            <option value="">All Urgency</option>
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                        <select class="filter-select" id="requestBloodFilter" onchange="filterRequests()">
+                            <option value="">All Blood Groups</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body no-padding">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Patient</th>
+                                            <th>Hospital</th>
+                                            <th>Blood Group</th>
+                                            <th>Units</th>
+                                            <th>Urgency</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="requestsTableBody">
+                                        <tr><td colspan="8" class="text-center text-muted" style="padding:40px;">Loading...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ──── Camps Page ──── -->
+            <section class="page-section" id="page-camps">
+                <div class="page-header">
+                    <div>
+                        <h1>Blood Camps</h1>
+                        <p>Organize and manage blood donation camps</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary btn-sm" onclick="openAddCampModal()" id="addCampBtn">
+                            ➕ New Camp
+                        </button>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div class="toolbar">
+                        <select class="filter-select" id="campStatusFilter" onchange="filterCamps()">
+                            <option value="">All Status</option>
+                            <option value="upcoming">Upcoming</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="grid-3" id="campsGrid">
+                        <div class="empty-state" style="grid-column:1/-1;">
+                            <div class="empty-icon">🏕️</div>
+                            <h3>Loading camps...</h3>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ═══ Modals ═══ -->
+
+    <!-- Add/Edit Donor Modal -->
+    <div class="modal-overlay" id="donorModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="donorModalTitle">Add New Donor</h3>
+                <button class="modal-close" onclick="closeModal('donorModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="donorForm">
+                    <input type="hidden" id="donorId">
+                    <div class="form-group">
+                        <label for="donorName">Full Name *</label>
+                        <input type="text" id="donorName" class="form-control" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="donorEmail">Email</label>
+                            <input type="email" id="donorEmail" class="form-control" placeholder="Email address">
+                        </div>
+                        <div class="form-group">
+                            <label for="donorPhone">Phone *</label>
+                            <input type="text" id="donorPhone" class="form-control" placeholder="Phone number" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="donorGender">Gender *</label>
+                            <select id="donorGender" class="form-control form-control-select" required>
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="donorDOB">Date of Birth *</label>
+                            <input type="date" id="donorDOB" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="donorBloodGroup">Blood Group *</label>
+                            <select id="donorBloodGroup" class="form-control form-control-select" required>
+                                <option value="">Select</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="donorCity">City</label>
+                            <input type="text" id="donorCity" class="form-control" placeholder="City">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="donorAddress">Address</label>
+                        <textarea id="donorAddress" class="form-control" placeholder="Full address"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="donorMedicalNotes">Medical Notes</label>
+                        <textarea id="donorMedicalNotes" class="form-control" placeholder="Any medical conditions or notes"></textarea>
+                    </div>
+                    <div class="form-group" id="donorStatusGroup" style="display:none;">
+                        <label for="donorStatus">Status</label>
+                        <select id="donorStatus" class="form-control form-control-select">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('donorModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveDonor()" id="saveDonorBtn">Save Donor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Donation Modal -->
+    <div class="modal-overlay" id="donationModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Record New Donation</h3>
+                <button class="modal-close" onclick="closeModal('donationModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="donationForm">
+                    <div class="form-group">
+                        <label for="donationDonor">Select Donor *</label>
+                        <select id="donationDonor" class="form-control form-control-select" required onchange="autofillBloodGroup()">
+                            <option value="">Choose a donor</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="donationBloodGroup">Blood Group *</label>
+                            <select id="donationBloodGroup" class="form-control form-control-select" required>
+                                <option value="">Select</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="donationDate">Donation Date *</label>
+                            <input type="date" id="donationDate" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="donationUnits">Units</label>
+                        <input type="number" id="donationUnits" class="form-control" value="1" min="0.5" max="3" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="donationNotes">Notes</label>
+                        <textarea id="donationNotes" class="form-control" placeholder="Any notes about this donation"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('donationModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveDonation()">Record Donation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blood Request Modal -->
+    <div class="modal-overlay" id="requestModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="requestModalTitle">New Blood Request</h3>
+                <button class="modal-close" onclick="closeModal('requestModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="requestForm">
+                    <input type="hidden" id="requestId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="requestPatient">Patient Name *</label>
+                            <input type="text" id="requestPatient" class="form-control" placeholder="Patient name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestHospital">Hospital *</label>
+                            <input type="text" id="requestHospital" class="form-control" placeholder="Hospital name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="requestBloodGroup">Blood Group *</label>
+                            <select id="requestBloodGroup" class="form-control form-control-select" required>
+                                <option value="">Select</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestUnits">Units Needed *</label>
+                            <input type="number" id="requestUnits" class="form-control" value="1" min="1" max="20" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestUrgency">Urgency *</label>
+                        <select id="requestUrgency" class="form-control form-control-select" required>
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="requestContact">Contact Person</label>
+                            <input type="text" id="requestContact" class="form-control" placeholder="Contact person name">
+                        </div>
+                        <div class="form-group">
+                            <label for="requestPhone">Contact Phone</label>
+                            <input type="text" id="requestPhone" class="form-control" placeholder="Phone number">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestReason">Reason</label>
+                        <textarea id="requestReason" class="form-control" placeholder="Reason for blood request"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('requestModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRequest()" id="saveRequestBtn">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camp Modal -->
+    <div class="modal-overlay" id="campModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="campModalTitle">Create Blood Camp</h3>
+                <button class="modal-close" onclick="closeModal('campModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="campForm">
+                    <input type="hidden" id="campId">
+                    <div class="form-group">
+                        <label for="campName">Camp Name *</label>
+                        <input type="text" id="campName" class="form-control" placeholder="Blood donation camp name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="campLocation">Location *</label>
+                        <input type="text" id="campLocation" class="form-control" placeholder="Full address / venue" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="campDate">Date *</label>
+                            <input type="date" id="campDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="campExpectedDonors">Expected Donors</label>
+                            <input type="number" id="campExpectedDonors" class="form-control" value="50" min="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="campStartTime">Start Time</label>
+                            <input type="time" id="campStartTime" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="campEndTime">End Time</label>
+                            <input type="time" id="campEndTime" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="campOrganizer">Organizer</label>
+                            <input type="text" id="campOrganizer" class="form-control" placeholder="Organization name">
+                        </div>
+                        <div class="form-group">
+                            <label for="campPhone">Contact Phone</label>
+                            <input type="text" id="campPhone" class="form-control" placeholder="Phone number">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="campDescription">Description</label>
+                        <textarea id="campDescription" class="form-control" placeholder="Camp details and description"></textarea>
+                    </div>
+                    <div class="form-group" id="campStatusGroup" style="display:none;">
+                        <label for="campStatus">Status</label>
+                        <select id="campStatus" class="form-control form-control-select">
+                            <option value="upcoming">Upcoming</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('campModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCamp()" id="saveCampBtn">Create Camp</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/donors.js"></script>
+    <script src="/js/inventory.js"></script>
+    <script src="/js/requests.js"></script>
+    <script src="/js/camps.js"></script>
+</body>
+</html>
