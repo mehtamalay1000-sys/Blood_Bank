@@ -17,7 +17,7 @@ const poolConfig = {
 // Add SSL for production (cloud MySQL providers require it)
 if (isProduction) {
     poolConfig.ssl = {
-        rejectUnauthorized: true
+        rejectUnauthorized: false
     };
 }
 

@@ -31,7 +31,7 @@ const sessionStoreOptions = {
 // Add SSL for production (cloud MySQL providers require it)
 if (isProduction) {
     sessionStoreOptions.ssl = {
-        rejectUnauthorized: true
+        rejectUnauthorized: false
     };
 }
 
