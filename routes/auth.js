@@ -34,13 +34,20 @@ router.post('/login', async (req, res) => {
             role: user.role
         };
 
-        res.json({ 
-            message: 'Login successful', 
-            user: req.session.user 
+        // Explicitly save session before responding
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ error: 'Session error: ' + err.message });
+            }
+            res.json({ 
+                message: 'Login successful', 
+                user: req.session.user 
+            });
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error: ' + error.message });
     }
 });
 

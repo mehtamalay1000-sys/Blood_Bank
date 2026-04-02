@@ -62,6 +62,23 @@ app.use(session({
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+    try {
+        const pool = require('./config/db');
+        const [rows] = await pool.query('SELECT 1 AS ok');
+        res.json({ 
+            status: 'ok', 
+            db: 'connected',
+            env: process.env.NODE_ENV || 'development',
+            dbHost: process.env.DB_HOST ? 'set' : 'not set',
+            dbName: process.env.DB_NAME || 'not set'
+        });
+    } catch (err) {
+        res.status(500).json({ status: 'error', db: err.message });
+    }
+});
+
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/donors', require('./routes/donors'));
