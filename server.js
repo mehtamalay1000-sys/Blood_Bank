@@ -28,8 +28,8 @@ const sessionStoreOptions = {
     expiration: 86400000
 };
 
-// Add SSL for production (cloud MySQL providers require it)
-if (isProduction) {
+// Add SSL if explicitly required in environment (some cloud providers need it, others reject it)
+if (process.env.DB_SSL === 'true') {
     sessionStoreOptions.ssl = {
         rejectUnauthorized: false
     };

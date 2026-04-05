@@ -14,8 +14,8 @@ const poolConfig = {
     queueLimit: 0
 };
 
-// Add SSL for production (cloud MySQL providers require it)
-if (isProduction) {
+// Add SSL if explicitly required in environment (some cloud providers need it, others reject it)
+if (process.env.DB_SSL === 'true') {
     poolConfig.ssl = {
         rejectUnauthorized: false
     };
