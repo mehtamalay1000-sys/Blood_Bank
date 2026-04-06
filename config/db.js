@@ -1,69 +1,76 @@
+const postgres = require('postgres');
 const { Pool } = require('pg');
+const dns = require('dns');
 require('dotenv').config();
 
-// PostgreSQL connection config
-const poolConfig = process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
-    : {
-        host: process.env.DB_HOST || 'localhost',
-        port: process.env.DB_PORT || 5432,
-        user: process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || 'postgres',
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
-    };
+// Force IPv4 first - fixes ENOTFOUND on Node.js v17+ with Supabase
+dns.setDefaultResultOrder('ipv4first');
 
-const pgPool = new Pool(poolConfig);
+const connectionString = process.env.DATABASE_URL;
 
-// Helper to convert MySQL queries to PostgreSQL syntax
-function translateSql(sql) {
+// ── Supabase-recommended driver (postgres.js) for all queries ──
+const sql = postgres(connectionString, {
+    ssl: 'require',
+    connection: {
+        options: '--cluster=supabase'  // recommended by Supabase
+    }
+});
+
+// ── pg Pool (kept ONLY for connect-pg-simple session store) ──
+const pgPool = new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+});
+
+// Helper to convert MySQL ? placeholders to PostgreSQL $1, $2, etc.
+function translateSql(sqlStr) {
     let index = 1;
-    // Replace ? with $1, $2 (this simplistic approach works for standard queries)
-    let pgSql = sql.replace(/\?/g, () => `$${index++}`);
-    return pgSql;
+    return sqlStr.replace(/\?/g, () => `$${index++}`);
 }
 
-// Wrapper mimicking mysql2/promise behavior
+// Wrapper mimicking mysql2/promise behavior so all routes work unchanged
 const wrapper = {
-    query: async (sql, params) => {
-        let isInsert = sql.trim().toUpperCase().startsWith('INSERT');
-        let isUpdate = sql.trim().toUpperCase().startsWith('UPDATE');
-        let isDelete = sql.trim().toUpperCase().startsWith('DELETE');
-        
-        let pgSql = translateSql(sql);
-        
+    query: async (sqlStr, params) => {
+        let isInsert = sqlStr.trim().toUpperCase().startsWith('INSERT');
+        let isUpdate = sqlStr.trim().toUpperCase().startsWith('UPDATE');
+        let isDelete = sqlStr.trim().toUpperCase().startsWith('DELETE');
+
+        let pgSql = translateSql(sqlStr);
+
         // Postgres needs RETURNING to get newly inserted ID
         if (isInsert && !pgSql.toUpperCase().includes('RETURNING')) {
             pgSql += ' RETURNING id';
         }
-        
-        const result = await pgPool.query(pgSql, params || []);
-        
+
+        const result = await sql.unsafe(pgSql, params || []);
+
         if (isInsert) {
-            return [{ insertId: result.rows.length > 0 ? result.rows[0].id : null, affectedRows: result.rowCount }];
+            return [{ insertId: result.length > 0 ? result[0].id : null, affectedRows: result.count }];
         } else if (isUpdate || isDelete) {
-            return [{ affectedRows: result.rowCount }];
+            return [{ affectedRows: result.count }];
         } else {
-            return [result.rows, result.fields]; // [rows] structure
+            return [result]; // [rows] structure
         }
     },
+
     getConnection: async () => {
+        // Use pg Pool for transaction support (connection-based transactions)
         const client = await pgPool.connect();
         return {
             beginTransaction: async () => client.query('BEGIN'),
-            query: async (sql, params) => {
-                let isInsert = sql.trim().toUpperCase().startsWith('INSERT');
-                let isUpdate = sql.trim().toUpperCase().startsWith('UPDATE');
-                let isDelete = sql.trim().toUpperCase().startsWith('DELETE');
-                
-                let pgSql = translateSql(sql);
-                
+            query: async (sqlStr, params) => {
+                let isInsert = sqlStr.trim().toUpperCase().startsWith('INSERT');
+                let isUpdate = sqlStr.trim().toUpperCase().startsWith('UPDATE');
+                let isDelete = sqlStr.trim().toUpperCase().startsWith('DELETE');
+
+                let pgSql = translateSql(sqlStr);
+
                 if (isInsert && !pgSql.toUpperCase().includes('RETURNING')) {
                     pgSql += ' RETURNING id';
                 }
-                
+
                 const result = await client.query(pgSql, params || []);
-                
+
                 if (isInsert) {
                     return [{ insertId: result.rows.length > 0 ? result.rows[0].id : null, affectedRows: result.rowCount }];
                 } else if (isUpdate || isDelete) {
@@ -79,15 +86,10 @@ const wrapper = {
     }
 };
 
-// Test connection
-pgPool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ PostgreSQL connection error:', err.message);
-    } else {
-        console.log('✅ PostgreSQL connected successfully');
-        if(release) release();
-    }
-});
+// Test connection using postgres.js
+sql`SELECT 1 AS ok`
+    .then(() => console.log('✅ PostgreSQL connected successfully (postgres.js)'))
+    .catch(err => console.error('❌ PostgreSQL connection error:', err.message));
 
 module.exports = wrapper;
 module.exports.pgPool = pgPool;
