@@ -22,7 +22,7 @@ router.get('/stats', async (req, res) => {
         
         // Total donations this month
         const [monthlyDonations] = await pool.query(
-            'SELECT COUNT(*) as total FROM donations WHERE MONTH(donation_date) = MONTH(CURRENT_DATE()) AND YEAR(donation_date) = YEAR(CURRENT_DATE())'
+            'SELECT COUNT(*) as total FROM donations WHERE EXTRACT(MONTH FROM donation_date) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM donation_date) = EXTRACT(YEAR FROM CURRENT_DATE)'
         );
 
         // Critical requests
@@ -77,7 +77,7 @@ router.get('/recent-requests', async (req, res) => {
     try {
         const [rows] = await pool.query(
             `SELECT * FROM blood_requests 
-             ORDER BY FIELD(urgency, 'critical', 'urgent', 'normal'), requested_at DESC 
+             ORDER BY CASE urgency WHEN 'critical' THEN 1 WHEN 'urgent' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END, requested_at DESC 
              LIMIT 10`
         );
         res.json({ requests: rows });

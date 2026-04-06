@@ -15,12 +15,13 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.101.1",
     "bcryptjs": "^3.0.3",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
-    "express-mysql-session": "^3.0.3",
     "express-session": "^1.19.0",
-    "mysql2": "^3.20.0"
+    "pg": "^8.20.0"
   }
 }

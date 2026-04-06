@@ -1,6 +1,6 @@
 const express = require('express');
 const session = require('express-session');
-const MySQLStore = require('express-mysql-session')(session);
+const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
@@ -16,26 +16,12 @@ if (isProduction) {
     app.set('trust proxy', 1);
 }
 
-// MySQL Session Store
-const sessionStoreOptions = {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'blood_bank_db',
-    clearExpired: true,
-    checkExpirationInterval: 900000,
-    expiration: 86400000
-};
-
-// Add SSL if explicitly required in environment (some cloud providers need it, others reject it)
-if (process.env.DB_SSL === 'true') {
-    sessionStoreOptions.ssl = {
-        rejectUnauthorized: false
-    };
-}
-
-const sessionStore = new MySQLStore(sessionStoreOptions);
+// PostgreSQL Session Store
+const sessionStore = new pgSession({
+    pool: pool.pgPool, // use the exported pgPool from our wrapper
+    tableName: 'session',     // Ensure this matches Supabase configuration (requires a `session` table)
+    createTableIfMissing: true // Automatically create session table!
+});
 
 // Middleware
 app.use(cors({

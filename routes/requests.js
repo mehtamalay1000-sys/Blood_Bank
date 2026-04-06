@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
             params.push(blood_group);
         }
 
-        query += ' ORDER BY FIELD(urgency, "critical", "urgent", "normal"), requested_at DESC';
+        query += " ORDER BY CASE urgency WHEN 'critical' THEN 1 WHEN 'urgent' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END, requested_at DESC";
 
         const [rows] = await pool.query(query, params);
         res.json({ requests: rows });
